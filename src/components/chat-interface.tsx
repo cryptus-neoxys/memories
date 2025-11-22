@@ -26,6 +26,7 @@ export function ChatInterface({
   const chats = useChatStore((state) => state.chats);
   const addChat = useChatStore((state) => state.addChat);
   const addMessage = useChatStore((state) => state.addMessage);
+  const updateChat = useChatStore((state) => state.updateChat);
 
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -63,15 +64,77 @@ export function ChatInterface({
     addMessage(chatId, userMessage);
     setInputValue("");
 
-    if (!onSendMessage) return;
+    if (onSendMessage) {
+      try {
+        setIsSending(true);
+        await onSendMessage({ chatId, message: userMessage });
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    setIsSending(true);
+    const assistantMessageId = nanoid();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    addMessage(chatId, assistantMessage);
 
     try {
-      setIsSending(true);
-      await onSendMessage({ chatId, message: userMessage });
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId,
+          messages: [...(activeChat?.messages || []), userMessage],
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to send message");
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value, { stream: true });
+        accumulatedContent += text;
+
+        updateChat(chatId, (chat) => {
+          const messages = [...chat.messages];
+          const lastMsgIndex = messages.findIndex(
+            (m) => m.id === assistantMessageId
+          );
+          if (lastMsgIndex !== -1) {
+            messages[lastMsgIndex] = {
+              ...messages[lastMsgIndex],
+              content: accumulatedContent,
+            };
+          }
+          return { ...chat, messages };
+        });
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
     } finally {
       setIsSending(false);
     }
-  }, [addMessage, ensureActiveChat, inputValue, onSendMessage]);
+  }, [
+    addMessage,
+    ensureActiveChat,
+    inputValue,
+    onSendMessage,
+    activeChat,
+    updateChat,
+  ]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
