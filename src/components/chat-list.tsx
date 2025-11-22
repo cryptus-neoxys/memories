@@ -1,11 +1,13 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Brain } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
+import { MemoryViewer } from "@/components/memory-viewer";
 
 export function ChatList() {
   const chats = useChatStore((state) => state.chats);
@@ -13,6 +15,7 @@ export function ChatList() {
   const addChat = useChatStore((state) => state.addChat);
   const selectChat = useChatStore((state) => state.selectChat);
   const deleteChat = useChatStore((state) => state.deleteChat);
+  const [isMemoryViewerOpen, setIsMemoryViewerOpen] = useState(false);
 
   const handleNewChat = () => {
     addChat();
@@ -33,15 +36,32 @@ export function ChatList() {
             {chats.length || "No"} conversations
           </p>
         </div>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleNewChat}
-          aria-label="Start new chat"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setIsMemoryViewerOpen(true)}
+            aria-label="View memories"
+            title="View Memories"
+          >
+            <Brain className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleNewChat}
+            aria-label="Start new chat"
+            title="New Chat"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
+      <MemoryViewer
+        open={isMemoryViewerOpen}
+        onOpenChange={setIsMemoryViewerOpen}
+      />
 
       <ScrollArea className="flex-1">
         <div className="space-y-2">
