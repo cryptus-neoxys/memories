@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/store/chat-store";
 import type { Message } from "@/lib/types";
@@ -31,6 +31,7 @@ export function ChatInterface({
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const activeChat = useMemo(
     () => chats.find((chat) => chat.id === activeChatId),
@@ -42,6 +43,14 @@ export function ChatInterface({
     if (!viewport) return;
     viewport.scrollTop = viewport.scrollHeight;
   }, [activeChat?.messages.length]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [inputValue]);
 
   const ensureActiveChat = useCallback(() => {
     if (activeChat) return activeChat.id;
@@ -63,6 +72,39 @@ export function ChatInterface({
 
     addMessage(chatId, userMessage);
     setInputValue("");
+
+    // Retrieve relevant memories
+    console.log("Retrieving memories for query:", trimmed);
+    let memoryMessages: Message[] = [];
+    try {
+      const retrieveResponse = await fetch("/api/retrieve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed }),
+      });
+      if (retrieveResponse.ok) {
+        const { memories }: { memories: string[] } =
+          await retrieveResponse.json();
+        memoryMessages = memories.map((content) => ({
+          id: nanoid(),
+          role: "system" as const,
+          content,
+          timestamp: new Date().toISOString(),
+        }));
+        console.log("Retrieved memories:", memories.length);
+      } else {
+        console.warn("Failed to retrieve memories");
+      }
+    } catch (error) {
+      console.error("Error retrieving memories:", error);
+    }
+
+    // Augment messages with memories
+    const augmentedMessages = [
+      ...memoryMessages,
+      ...(activeChat?.messages || []),
+      userMessage,
+    ];
 
     if (onSendMessage) {
       try {
@@ -90,7 +132,7 @@ export function ChatInterface({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId,
-          messages: [...(activeChat?.messages || []), userMessage],
+          messages: augmentedMessages,
         }),
       });
 
@@ -122,6 +164,25 @@ export function ChatInterface({
           return { ...chat, messages };
         });
       }
+
+      // After assistant response complete, check for embedding
+      const updatedChat = chats.find((c) => c.id === chatId);
+      if (updatedChat && updatedChat.messageCount % 5 === 0) {
+        console.log(
+          "Triggering embedding for chat",
+          chatId,
+          "with message count",
+          updatedChat.messageCount
+        );
+        const lastFiveMessages = updatedChat.messages.slice(-5);
+        fetch("/api/embed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId, messages: lastFiveMessages }),
+        }).catch((error) => {
+          console.error("Error embedding memories:", error);
+        });
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -134,13 +195,15 @@ export function ChatInterface({
     onSendMessage,
     activeChat,
     updateChat,
+    chats,
   ]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
       void handleSend();
     }
+    // Allow default behavior (new line) for Enter
   };
 
   const renderEmptyState = () => (
@@ -150,7 +213,7 @@ export function ChatInterface({
   );
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-xl border bg-background p-4 shadow-sm">
+    <div className="flex h-full flex-col gap-4 rounded-xl border bg-background p-4 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between border-b pb-2">
         <div>
           <p className="text-sm font-medium">
@@ -165,7 +228,7 @@ export function ChatInterface({
       </div>
 
       <ScrollArea
-        className="flex-1 rounded-md border"
+        className="flex-1 min-h-0 rounded-md border"
         viewportRef={viewportRef}
       >
         <div className="space-y-4 p-4">
@@ -184,12 +247,17 @@ export function ChatInterface({
           void handleSend();
         }}
       >
-        <Input
+        <Textarea
+          ref={textareaRef}
           placeholder="Share context, preferences, or tasks..."
           value={inputValue}
-          onChange={(event) => setInputValue(event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+            setInputValue(event.target.value)
+          }
           onKeyDown={handleKeyDown}
           disabled={isStreaming || isSending}
+          rows={1}
+          className="resize-none min-h-[36px] max-h-20"
         />
         <Button
           type="submit"

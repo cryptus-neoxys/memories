@@ -3,8 +3,8 @@ import { ChatInterface } from "@/components/chat-interface";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background px-4 py-10 font-sans md:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <main className="h-screen bg-background px-4 py-10 font-sans md:px-8 overflow-hidden">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 h-full">
         <header>
           <h1 className="mt-2 text-2xl font-semibold text-foreground">
             Bhindi · Long-Term Memory PoC
@@ -15,7 +15,7 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr] flex-1 min-h-0">
           <ChatList />
           <ChatInterface />
         </div>
