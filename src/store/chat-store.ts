@@ -8,6 +8,7 @@ import type { StateStorage } from "zustand/middleware";
 import type { Chat, Message } from "@/lib/types";
 
 const STORAGE_KEY = "bhindi-chat-store";
+const MAX_TITLE_LENGTH = 48;
 const DEFAULT_CHAT_TITLE = "New Chat";
 
 const fallbackStorage: StateStorage = {
@@ -62,7 +63,8 @@ export const useChatStore = create<ChatStore>()(
             const updatedMessages = [...chat.messages, message];
             const derivedTitle =
               chat.title === DEFAULT_CHAT_TITLE && message.role === "user"
-                ? message.content.slice(0, 48) || DEFAULT_CHAT_TITLE
+                ? message.content.slice(0, MAX_TITLE_LENGTH) ||
+                  DEFAULT_CHAT_TITLE
                 : chat.title;
 
             return {

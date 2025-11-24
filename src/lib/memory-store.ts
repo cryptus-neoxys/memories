@@ -6,11 +6,16 @@ import { Message, MemoryMetadata, Memory } from "./types";
 const NAMESPACE = "poc-user";
 const MAX_TOKENS_PER_CHUNK = 500;
 const EMBEDDING_MODEL = "text-embedding-3-large";
+const TOKENS_PER_WORD = 1.3;
+const MAX_EMBEDDING_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000;
+const SIMILARITY_THRESHOLD = 0.7;
+const MAX_MEMORY_RESULTS = 15;
 
-// Approximate token count: roughly 1.3 tokens per word
+// Approximate token count: roughly TOKENS_PER_WORD tokens per word
 function countTokens(text: string): number {
   const words = text.split(/\s+/).length;
-  return Math.ceil(words * 1.3);
+  return Math.ceil(words * TOKENS_PER_WORD);
 }
 
 export async function embedMemory(
@@ -33,7 +38,7 @@ export async function embedMemory(
 
     let embedding: number[] | null = null;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = MAX_EMBEDDING_ATTEMPTS;
 
     while (attempts < maxAttempts) {
       try {
@@ -55,7 +60,9 @@ export async function embedMemory(
           );
         }
         // Wait before retry
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_DELAY_MS * attempts)
+        );
       }
     }
 
@@ -101,7 +108,9 @@ export async function embedMemory(
             `Failed to upsert memory after ${maxAttempts} attempts`
           );
         }
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_DELAY_MS * attempts)
+        );
       }
     }
   }
@@ -110,7 +119,7 @@ export async function embedMemory(
 export async function retrieveMemories(query: string): Promise<Memory[]> {
   let queryEmbedding: number[] | null = null;
   let attempts = 0;
-  const maxAttempts = 3;
+  const maxAttempts = MAX_EMBEDDING_ATTEMPTS;
 
   while (attempts < maxAttempts) {
     try {
@@ -129,7 +138,9 @@ export async function retrieveMemories(query: string): Promise<Memory[]> {
         );
         return [];
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
+      await new Promise((resolve) =>
+        setTimeout(resolve, RETRY_DELAY_MS * attempts)
+      );
     }
   }
 
@@ -142,14 +153,14 @@ export async function retrieveMemories(query: string): Promise<Memory[]> {
     try {
       const queryResponse = await index.namespace(NAMESPACE).query({
         vector: queryEmbedding,
-        topK: 15,
+        topK: MAX_MEMORY_RESULTS,
         includeMetadata: true,
       });
 
       const memories: Memory[] =
         queryResponse.matches
-          ?.filter((match) => match.score && match.score > 0.7)
-          .slice(0, 15)
+          ?.filter((match) => match.score && match.score > SIMILARITY_THRESHOLD)
+          .slice(0, MAX_MEMORY_RESULTS)
           .map((match) => ({
             id: match.id,
             content: (match.metadata?.message_content as string) || "",

@@ -2,6 +2,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/types";
 
+const MAX_MESSAGE_WIDTH_PERCENT = 75;
+const TIMESTAMP_FONT_SIZE = "11px";
+
 interface MessageBubbleProps {
   message: Message;
 }
@@ -42,11 +45,17 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <AvatarFallback>{avatarFallback[message.role]}</AvatarFallback>
         </Avatar>
       )}
-      <div className="flex flex-col max-w-[75%] space-y-1">
+      <div
+        className="flex flex-col space-y-1"
+        style={{ maxWidth: `${MAX_MESSAGE_WIDTH_PERCENT}%` }}
+      >
         <div className={cn("px-4 py-2 shadow-sm", bubbleStyles[message.role])}>
           {message.content}
         </div>
-        <span className="text-[11px] text-muted-foreground">
+        <span
+          className="text-muted-foreground"
+          style={{ fontSize: TIMESTAMP_FONT_SIZE }}
+        >
           {formatTime(message.timestamp)}
         </span>
       </div>

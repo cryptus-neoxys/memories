@@ -10,6 +10,8 @@ import { useChatStore } from "@/store/chat-store";
 import type { Message } from "@/lib/types";
 import { MessageBubble } from "@/components/message-bubble";
 
+const MEMORY_TRIGGER_INTERVAL = 1;
+
 interface ChatInterfaceProps {
   onSendMessage?: (payload: {
     chatId: string;
@@ -167,18 +169,23 @@ export function ChatInterface({
 
       // After assistant response complete, check for embedding
       const updatedChat = chats.find((c) => c.id === chatId);
-      if (updatedChat && updatedChat.messageCount % 5 === 0) {
+      if (
+        updatedChat &&
+        updatedChat.messageCount % MEMORY_TRIGGER_INTERVAL === 0
+      ) {
         console.log(
           "Triggering embedding for chat",
           chatId,
           "with message count",
           updatedChat.messageCount
         );
-        const lastFiveMessages = updatedChat.messages.slice(-5);
+        const lastMessages = updatedChat.messages.slice(
+          -MEMORY_TRIGGER_INTERVAL
+        );
         fetch("/api/embed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chatId, messages: lastFiveMessages }),
+          body: JSON.stringify({ chatId, messages: lastMessages }),
         }).catch((error) => {
           console.error("Error embedding memories:", error);
         });
@@ -257,7 +264,7 @@ export function ChatInterface({
           onKeyDown={handleKeyDown}
           disabled={isStreaming || isSending}
           rows={1}
-          className="resize-none min-h-[36px] max-h-20"
+          className="resize-none min-h-9 max-h-20"
         />
         <Button
           type="submit"
