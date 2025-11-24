@@ -5,6 +5,8 @@ export async function POST(req: Request) {
   try {
     const { query }: { query: string } = await req.json();
 
+    console.log(`[API] Searching memories for: "${query}"`);
+
     if (!query || typeof query !== "string") {
       return NextResponse.json(
         { error: "Invalid request body. Expected { query }" },

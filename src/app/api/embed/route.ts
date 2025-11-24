@@ -14,10 +14,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Run embedding asynchronously without blocking
-    embedMemory(chatId, messages).catch((error) => {
-      console.error("Error embedding memory:", error);
-    });
+    // Run embedding and await it to ensure it completes before the response is sent
+    // In serverless environments, background tasks can be killed if the response is returned early
+    await embedMemory(chatId, messages);
 
     return NextResponse.json({ success: true });
   } catch (error) {

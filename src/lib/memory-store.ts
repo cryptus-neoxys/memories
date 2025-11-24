@@ -9,7 +9,7 @@ const EMBEDDING_MODEL = "text-embedding-3-small";
 const TOKENS_PER_WORD = 1.3;
 const MAX_EMBEDDING_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
-const SIMILARITY_THRESHOLD = 0.7;
+const SIMILARITY_THRESHOLD = 0.35;
 const MAX_MEMORY_RESULTS = 15;
 
 // Approximate token count: roughly TOKENS_PER_WORD tokens per word
@@ -83,6 +83,9 @@ export async function embedMemory(
     attempts = 0;
     while (attempts < maxAttempts) {
       try {
+        console.log(
+          `Upserting memory ${memoryId} to Pinecone namespace ${NAMESPACE}`
+        );
         await index.namespace(NAMESPACE).upsert([
           {
             id: memoryId,
@@ -158,6 +161,10 @@ export async function retrieveMemories(query: string): Promise<Memory[]> {
         topK: MAX_MEMORY_RESULTS,
         includeMetadata: true,
       });
+
+      console.log(
+        `[Pinecone] Query: "${query}" | Matches: ${queryResponse.matches?.length} | Top Score: ${queryResponse.matches?.[0]?.score}`
+      );
 
       const memories: Memory[] =
         queryResponse.matches
