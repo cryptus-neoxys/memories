@@ -10,7 +10,7 @@ import { useChatStore } from "@/store/chat-store";
 import type { Message } from "@/lib/types";
 import { MessageBubble } from "@/components/message-bubble";
 
-const MEMORY_TRIGGER_INTERVAL = 1;
+const MEMORY_TRIGGER_INTERVAL = 2;
 
 interface ChatInterfaceProps {
   onSendMessage?: (payload: {
@@ -168,7 +168,8 @@ export function ChatInterface({
       }
 
       // After assistant response complete, check for embedding
-      const updatedChat = chats.find((c) => c.id === chatId);
+      const currentChats = useChatStore.getState().chats;
+      const updatedChat = currentChats.find((c) => c.id === chatId);
       if (
         updatedChat &&
         updatedChat.messageCount % MEMORY_TRIGGER_INTERVAL === 0

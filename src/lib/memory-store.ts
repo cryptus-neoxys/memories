@@ -5,7 +5,7 @@ import { Message, MemoryMetadata, Memory } from "./types";
 
 const NAMESPACE = "poc-user";
 const MAX_TOKENS_PER_CHUNK = 500;
-const EMBEDDING_MODEL = "text-embedding-3-large";
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const TOKENS_PER_WORD = 1.3;
 const MAX_EMBEDDING_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
@@ -45,6 +45,7 @@ export async function embedMemory(
         const response = await openai.embeddings.create({
           model: EMBEDDING_MODEL,
           input: message.content,
+          dimensions: 512,
         });
         embedding = response.data[0].embedding;
         break;
@@ -126,6 +127,7 @@ export async function retrieveMemories(query: string): Promise<Memory[]> {
       const response = await openai.embeddings.create({
         model: EMBEDDING_MODEL,
         input: query,
+        dimensions: 512,
       });
       queryEmbedding = response.data[0].embedding;
       break;
