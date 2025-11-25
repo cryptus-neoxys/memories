@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Brain } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export function CoreMemoryList() {
@@ -15,7 +15,9 @@ export function CoreMemoryList() {
       try {
         const response = await fetch("/api/memories/core");
         if (!response.ok) {
-          throw new Error("Failed to fetch core memories");
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.error || "Failed to fetch core memories");
+          return;
         }
         const data = await response.json();
         setMemories(data.memories || []);

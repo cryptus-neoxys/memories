@@ -43,8 +43,11 @@ export function ChatInterface({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    viewport.scrollTop = viewport.scrollHeight;
-  }, [activeChat?.messages.length]);
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      viewport.scrollTop = viewport.scrollHeight;
+    });
+  }, [activeChat?.messages]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
