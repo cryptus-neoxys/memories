@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Brain } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 export function CoreMemoryList() {
@@ -56,23 +57,25 @@ export function CoreMemoryList() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="space-y-4 h-full flex flex-col">
+      <div className="flex items-center gap-2 mb-4 shrink-0">
         <Brain className="h-5 w-5 text-primary" />
         <h3 className="font-semibold text-lg">Core Identity & Facts</h3>
       </div>
-      <div className="grid grid-cols-1 gap-3">
-        {memories.map((memory, index) => (
-          <Card key={index} className="bg-muted/50">
-            <CardContent className="p-3 flex items-start gap-3">
-              <Badge variant="outline" className="mt-0.5 shrink-0">
-                {index + 1}
-              </Badge>
-              <p className="text-sm leading-relaxed">{memory}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <ScrollArea className="h-[60vh] pr-4">
+        <div className="grid grid-cols-1 gap-3">
+          {memories.map((memory, index) => (
+            <Card key={index} className="bg-muted/50">
+              <CardContent className="p-3 flex items-start gap-3">
+                <Badge variant="outline" className="mt-0.5 shrink-0">
+                  {index + 1}
+                </Badge>
+                <p className="text-sm leading-relaxed">{memory}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
