@@ -144,5 +144,4 @@ vite.config.ts.timestamp-*
 .env.local
 
 .github/
-tasks/
 .vscode/
