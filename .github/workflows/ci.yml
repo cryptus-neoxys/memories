@@ -29,3 +29,11 @@ jobs:
         run: pnpm lint:check
       - name: Build
         run: pnpm build
+        env:
+          # openai.ts and pinecone.ts throw at module scope when these are
+          # unset, and next build imports every route module to collect page
+          # data. API routes are dynamic, so nothing is called during the
+          # build; these placeholders only let module evaluation finish.
+          OPENAI_API_KEY: ci-build-placeholder
+          PINECONE_API_KEY: ci-build-placeholder
+          PINECONE_INDEX_NAME: ci-build-placeholder
