@@ -1,6 +1,8 @@
 import { Pinecone } from "@pinecone-database/pinecone";
+import type { RecordMetadata, ScoredPineconeRecord } from "@pinecone-database/pinecone";
 import { openai } from "./openai";
 import { Memory } from "./types";
+import type { MessageRole } from "./types";
 
 if (!process.env.PINECONE_API_KEY) {
   throw new Error("PINECONE_API_KEY environment variable is required");
@@ -37,11 +39,11 @@ export async function getBroadCandidateMemories(
   });
 
   const memories: Memory[] =
-    queryResponse.matches?.map((match: any) => ({
+    queryResponse.matches?.map((match: ScoredPineconeRecord<RecordMetadata>) => ({
       id: match.id,
       content: (match.metadata?.message_content as string) || "",
       metadata: {
-        messageRole: (match.metadata?.message_role as any) || "user",
+        messageRole: (match.metadata?.message_role as MessageRole) || "user",
         messageContent: (match.metadata?.message_content as string) || "",
         timestamp: (match.metadata?.timestamp as string) || "",
         tokenCount: (match.metadata?.token_count as number) || 0,

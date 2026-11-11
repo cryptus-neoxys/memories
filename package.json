@@ -2,12 +2,13 @@
   "name": "bhindi-poc",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:check": "next lint --max-warnings=0 && tsc --noEmit"
+    "lint": "eslint .",
+    "lint:check": "eslint . && tsc --noEmit"
   },
   "dependencies": {
     "@pinecone-database/pinecone": "^6.1.3",
